@@ -1,0 +1,169 @@
+﻿@{
+    ViewData["Title"] = "Covid-19";
+}
+@model Covid19.Models.TimeSeries
+
+@{
+    var chartData = Model.DaysData.Where(day => day.PredictionFrom > 10000 && day.PredictionFrom < 1000000).ToList();
+}
+<div class="text-center">
+    <h1 class="display-4">COVID-19</h1>
+    <h3>Data outside China. Today is @DateTime.Now.ToLongDateString().</h3>
+    <table>
+        <tr>
+            <th rowspan="2">Date</th>
+            <th rowspan="2">Day number</th>
+        </tr>
+        <tr>
+            <th>Total cases</th>
+            <th>New cases</th>
+            <th>Increase Rate</th>
+            <th>Prediction from <br /> y=exp(@Model.ExponentialRegressionCoefficients.A.ToString("0.00000")+@Model.ExponentialRegressionCoefficients.B.ToString("0.00000")*x )</th>
+            <th>Prediction to <br /> Prediction from * @((Model.ExponentialRegressionCoefficients.RegressionError + 1).ToString("0.00000"))</th>
+        </tr>
+        @foreach (var day in Model.DaysData)
+        {
+            <tr>
+                <td>@day.Date.ToString("MMMM dd")</td>
+                <td>@day.DayNumber</td>
+                <td>@day.TotalCases?.ToString("#,##0")</td>
+                <td>@day.NewCases?.ToString("#,##0")</td>
+                <td>@day.IncreaseRate?.ToString("0.00000")</td>
+                <td>@day.PredictionFrom.ToString("#,##0")</td>
+                <td>@day.PredictionTo.ToString("#,##0")</td>
+            </tr>
+        }
+    </table>
+    <div style="width:90%;">
+        <canvas id="canvas_total_cases"></canvas>
+    </div>
+    <div style="width:90%;">
+        <canvas id="canvas_new_cases"></canvas>
+    </div>
+    <script>
+        var totalCases = {
+            type: 'line',
+            data: {
+                labels: [@foreach (var day in chartData){ @(day.DayNumber + ", ")} ],
+                datasets: [
+                    {
+                        label: 'Real cases',
+                        borderColor: 'rgba(0, 0, 0, 1)',
+                        data: [@foreach (var day in chartData){
+                                   if (day.TotalCases != null)
+                                   {
+                                       @(day.TotalCases.Value + ", ")
+                                   }
+                               } ],
+                        fill: false,
+                    },
+                    {
+                        label: 'Prediction from',
+                        borderColor: 'rgba(0, 255, 0, 0.2)',
+                        backgroundColor: 'rgba(0, 255, 0, 0.2)',
+                        data: [@foreach (var day in chartData){ @(day.PredictionFrom + ", ")} ],
+                        fill: true,
+                    },
+                    {
+                        label: 'Prediction to',
+                        borderColor: 'rgba(255, 0, 0, 0.2)',
+                        backgroundColor: 'rgba(255, 0, 0, 0.2)',
+                        data: [@foreach (var day in chartData){ @(day.PredictionTo + ", ")} ],
+                        fill: true,
+                    },
+                    ]
+            },
+            options: {
+                responsive: true,
+                title: {
+                    display: true,
+                    text: 'COVID-19 outside China total cases'
+                },
+                tooltips: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                hover: {
+                    mode: 'nearest',
+                    intersect: true
+                },
+                scales: {
+                    xAxes: [{
+                        display: true,
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Day'
+                        }
+                    }],
+                    yAxes: [{
+                        display: true,
+                        type: 'logarithmic',
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Total cases'
+                        }
+                    }]
+                }
+            }
+        };
+
+        var newCases = {
+            type: 'bar',
+            data: {
+                labels: [@foreach (var day in chartData){ @(day.DayNumber + ", ")} ],
+                datasets: [
+                    {
+                        label: 'New cases',
+                        borderColor: 'rgba(0, 0, 0, 1)',
+                        data: [@foreach (var day in chartData){
+                                   if (day.NewCases != null)
+                                   {
+                                       @(day.NewCases.Value + ", ")
+                                   }
+                               } ],
+                        fill: false,
+                    },
+                    ]
+            },
+            options: {
+                responsive: true,
+                title: {
+                    display: true,
+                    text: 'COVID-19 outside China new cases'
+                },
+                tooltips: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                hover: {
+                    mode: 'nearest',
+                    intersect: true
+                },
+                scales: {
+                    xAxes: [{
+                        display: true,
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Day'
+                        }
+                    }],
+                    yAxes: [{
+                        display: true,
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'New cases'
+                        }
+                    }]
+                }
+            }
+        };
+
+        window.onload = function () {
+            var ctx = document.getElementById('canvas_total_cases').getContext('2d');
+            window.myLine = new Chart(ctx, totalCases);
+
+            var ctx2 = document.getElementById('canvas_new_cases').getContext('2d');
+            window.myLine2 = new Chart(ctx2, newCases);
+        };
+    </script>
+</div>
