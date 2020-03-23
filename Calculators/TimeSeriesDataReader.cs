@@ -64,7 +64,8 @@
                 var dailyData = new DailyData
                 {
                     DayNumber = dayNumber,
-                    TotalCases = 0
+                    DateString = timeSeriesDataTable.Columns[columnIndex].ColumnName,
+                    TotalCases = 0,
                 };
                 for (var rowIndex = 0; rowIndex < timeSeriesDataTable.Rows.Count; rowIndex++)
                 {

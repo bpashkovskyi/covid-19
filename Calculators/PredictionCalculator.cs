@@ -14,8 +14,9 @@ namespace Covid19.Calculators
         private const string ConfirmedCsvUrl = "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Confirmed.csv";
         private const string DeathCsvUrl = "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Deaths.csv";
         private const string RecoveredCsvUrl = "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Recovered.csv";
-        private const int DaysToPredict = 130;
-        private readonly DateTime dayOne = new DateTime(2020, 01, 22);
+        private const int PredictToCases = 2000000;
+        private const int PredictFromCases = 10000;
+
 
         private TimeSeriesDataReader timeSeriesDataReader;
         private RegressionCalculator regressionCalculator;
@@ -35,44 +36,74 @@ namespace Covid19.Calculators
         private TimeSeries CreateTimeSeries(string casesTimeSeriesUrl)
         {
             var realDailyData = this.timeSeriesDataReader.GetDailyCasesOutsideChina(casesTimeSeriesUrl);
-            var exponentialRegressionCoefficients = this.regressionCalculator.CalculateExponentialRegressionCoefficients(realDailyData.Where(day => day.TotalCases.HasValue && day.TotalCases != 0).Select(day => (day.DayNumber, day.TotalCases.Value)).ToArray());
+            var realDataUsedForPrediction = realDailyData.Where(day => day.TotalCases > PredictFromCases).ToList();
+
+            var exponentialRegressionCoefficients = this.regressionCalculator.CalculateExponentialRegressionCoefficients(realDataUsedForPrediction.Select(day => (day.DayNumber, day.TotalCases.Value)).ToArray());
 
             var timeSeries = new TimeSeries
             {
-                DaysData = realDailyData,
+                DaysData = realDataUsedForPrediction,
                 ExponentialRegressionCoefficients = exponentialRegressionCoefficients,
             };
 
-            this.EnrichWithPredictedData(timeSeries);
-
-            return timeSeries;
+            var predictedTimeSeries = this.CreatePredictedTimeSeries(timeSeries);
+            return predictedTimeSeries;
         }
 
-        private void EnrichWithPredictedData(TimeSeries timeSeries)
+        private DailyData PredictDay(long dayNumber, string dateString, DateTime? date, long? dayTotalCases, ExponentialRegressionCoefficients coefficients)
         {
-            for (var dayNumber = 1; dayNumber <= DaysToPredict; dayNumber++)
-            {
-                var predictedDailyData = new DailyData
-                {
-                    Date = this.dayOne.AddDays(dayNumber - 1),
-                    DayNumber = dayNumber,
-                    PredictionFrom = (long)Math.Round(this.regressionCalculator.Exp(timeSeries.ExponentialRegressionCoefficients.A, timeSeries.ExponentialRegressionCoefficients.B, dayNumber)),
-                };
-                predictedDailyData.PredictionTo = (long)(predictedDailyData.PredictionFrom * (1 + timeSeries.ExponentialRegressionCoefficients.RegressionError));
+            var prediction = (long)Math.Round(this.regressionCalculator.Exp(coefficients.A, coefficients.B, dayNumber));
+            var predictionFrom = (long)Math.Round(prediction / (1 + coefficients.RegressionError));
+            var predictionTo = (long)Math.Round(prediction * (1 + coefficients.RegressionError));
 
-                if (dayNumber <= timeSeries.DaysData.Count)
-                {
-                    timeSeries.DaysData[dayNumber - 1].PredictionFrom = predictedDailyData.PredictionFrom;
-                    timeSeries.DaysData[dayNumber - 1].PredictionTo = predictedDailyData.PredictionTo;
-                    timeSeries.DaysData[dayNumber - 1].Date = predictedDailyData.Date;
-                    timeSeries.DaysData[dayNumber - 1].NewCases = dayNumber == 1 ? timeSeries.DaysData[dayNumber - 1].TotalCases : timeSeries.DaysData[dayNumber - 1].TotalCases - timeSeries.DaysData[dayNumber - 2].TotalCases;
-                    timeSeries.DaysData[dayNumber - 1].IncreaseRate = dayNumber == 1 ? 1 : (double)timeSeries.DaysData[dayNumber - 1].TotalCases / (double)timeSeries.DaysData[dayNumber - 2].TotalCases;
-                }
-                else
-                {
-                    timeSeries.DaysData.Add(predictedDailyData);
-                }
+            var dailyData = new DailyData
+            {
+                DayNumber = dayNumber,
+                DateString = !string.IsNullOrEmpty(dateString) ? dateString : date?.ToShortDateString(),
+                Date = date ?? (string.IsNullOrEmpty(dateString) ? (DateTime?)null : DateTime.Parse(dateString)),
+                PredictedTotalCasesFrom = predictionFrom,
+                PredictedTotalCasesTo = predictionTo,
+                TotalCases = dayTotalCases
+            };
+
+            return dailyData;
+        }
+
+        private TimeSeries CreatePredictedTimeSeries(TimeSeries timeSeries)
+        {
+            var days = timeSeries.DaysData;
+
+            var predictedDays = days.Select(day => this.PredictDay(day.DayNumber, day.DateString, null, day.TotalCases, timeSeries.ExponentialRegressionCoefficients)).ToList();
+
+            while (predictedDays.Last().PredictedTotalCasesFrom < PredictToCases)
+            {
+                var lastPredictedDay = predictedDays.Last();
+                predictedDays.Add(this.PredictDay(lastPredictedDay.DayNumber + 1, null, lastPredictedDay.Date.Value.AddDays(1), null, timeSeries.ExponentialRegressionCoefficients));
             }
+
+            foreach (var day in predictedDays.Where(day => day.TotalCases.HasValue))
+            {
+                var previousDayIndex = predictedDays.IndexOf(day) - 1;
+                var previousDay = previousDayIndex < 0 ? null : predictedDays[previousDayIndex];
+
+                day.NewCases = previousDay == null ? 0 : day.TotalCases - previousDay.TotalCases ;
+                day.IncreaseRate = previousDay == null ? 1 : (double)day.TotalCases / (double)previousDay.TotalCases;
+            }
+
+            foreach (var day in predictedDays)
+            {
+                var previousDayIndex = predictedDays.IndexOf(day) - 1;
+                var previousDay = previousDayIndex < 0 ? null : predictedDays[previousDayIndex];
+
+                day.PredictedNewCasesFrom = previousDay == null ? 0 : day.PredictedTotalCasesFrom - previousDay.PredictedTotalCasesFrom;
+                day.PredictedNewCasesTo = previousDay == null ? 0 : day.PredictedTotalCasesTo - previousDay.PredictedTotalCasesTo;
+            }
+
+            return new TimeSeries
+            {
+                DaysData = predictedDays,
+                ExponentialRegressionCoefficients = timeSeries.ExponentialRegressionCoefficients
+            };
         }
     }
 }

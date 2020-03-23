@@ -9,7 +9,5 @@ namespace Covid19.Models
         public List<DailyData> DaysData { get; set; }
 
         public ExponentialRegressionCoefficients ExponentialRegressionCoefficients { get; set; }
-
-        public DateTime BasedOnDate { get; set; }
     }
 }

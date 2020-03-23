@@ -4,7 +4,7 @@
 @model Covid19.Models.TimeSeries
 
 @{
-    var chartData = Model.DaysData.Where(day => day.PredictionFrom > 10000 && day.PredictionFrom < 1000000).ToList();
+    var chartData = Model.DaysData.Where(day => day.PredictedTotalCasesFrom > 10000 && day.PredictedTotalCasesFrom < 1000000).ToList();
 }
 <div class="text-center">
     <h1 class="display-4">COVID-19</h1>
@@ -15,22 +15,28 @@
             <th rowspan="2">Day number</th>
         </tr>
         <tr>
+            <th>Predicted total cases from<br />y=exp(@Model.ExponentialRegressionCoefficients.A.ToString("0.00000")+@Model.ExponentialRegressionCoefficients.B.ToString("0.00000")*x ) / @((Model.ExponentialRegressionCoefficients.RegressionError + 1).ToString("0.00000"))</th>
             <th>Total cases</th>
+            <th>Predicted total cases to<br />y=exp(@Model.ExponentialRegressionCoefficients.A.ToString("0.00000")+@Model.ExponentialRegressionCoefficients.B.ToString("0.00000")*x ) * @((Model.ExponentialRegressionCoefficients.RegressionError + 1).ToString("0.00000"))</th>
+            <th>Predicted new cases from</th>
             <th>New cases</th>
+            <th>Predicted new cases to</th>
             <th>Increase Rate</th>
-            <th>Prediction from <br /> y=exp(@Model.ExponentialRegressionCoefficients.A.ToString("0.00000")+@Model.ExponentialRegressionCoefficients.B.ToString("0.00000")*x )</th>
-            <th>Prediction to <br /> Prediction from * @((Model.ExponentialRegressionCoefficients.RegressionError + 1).ToString("0.00000"))</th>
+
         </tr>
         @foreach (var day in Model.DaysData)
         {
             <tr>
-                <td>@day.Date.ToString("MMMM dd")</td>
+                <td>@day.Date?.ToString("MMMM dd")</td>
                 <td>@day.DayNumber</td>
+                <td>@day.PredictedTotalCasesFrom.ToString("#,##0")</td>
                 <td>@day.TotalCases?.ToString("#,##0")</td>
+                <td>@day.PredictedTotalCasesTo.ToString("#,##0")</td>
+                <td>@day.PredictedNewCasesFrom.ToString("#,##0")</td>
                 <td>@day.NewCases?.ToString("#,##0")</td>
+                <td>@day.PredictedNewCasesTo.ToString("#,##0")</td>
                 <td>@day.IncreaseRate?.ToString("0.00000")</td>
-                <td>@day.PredictionFrom.ToString("#,##0")</td>
-                <td>@day.PredictionTo.ToString("#,##0")</td>
+
             </tr>
         }
     </table>
@@ -47,28 +53,23 @@
                 labels: [@foreach (var day in chartData){ @(day.DayNumber + ", ")} ],
                 datasets: [
                     {
-                        label: 'Real cases',
-                        borderColor: 'rgba(0, 0, 0, 1)',
-                        data: [@foreach (var day in chartData){
-                                   if (day.TotalCases != null)
-                                   {
-                                       @(day.TotalCases.Value + ", ")
-                                   }
-                               } ],
-                        fill: false,
-                    },
-                    {
-                        label: 'Prediction from',
+                        label: 'Predicted total cases from',
                         borderColor: 'rgba(0, 255, 0, 0.2)',
                         backgroundColor: 'rgba(0, 255, 0, 0.2)',
-                        data: [@foreach (var day in chartData){ @(day.PredictionFrom + ", ")} ],
+                        data: [@foreach (var day in chartData){ @(day.PredictedTotalCasesFrom + ", ")} ],
                         fill: true,
                     },
                     {
-                        label: 'Prediction to',
+                        label: 'Total cases',
+                        borderColor: 'rgba(0, 0, 0, 1)',
+                        data: [@foreach (var day in chartData){if (day.TotalCases != null){@(day.TotalCases.Value + ", ")}} ],
+                        fill: false,
+                    },
+                    {
+                        label: 'Predicted cases to',
                         borderColor: 'rgba(255, 0, 0, 0.2)',
                         backgroundColor: 'rgba(255, 0, 0, 0.2)',
-                        data: [@foreach (var day in chartData){ @(day.PredictionTo + ", ")} ],
+                        data: [@foreach (var day in chartData){ @(day.PredictedTotalCasesTo + ", ")} ],
                         fill: true,
                     },
                     ]
@@ -97,7 +98,7 @@
                     }],
                     yAxes: [{
                         display: true,
-                        type: 'logarithmic',
+                        //type: 'logarithmic',
                         scaleLabel: {
                             display: true,
                             labelString: 'Total cases'
@@ -113,8 +114,16 @@
                 labels: [@foreach (var day in chartData){ @(day.DayNumber + ", ")} ],
                 datasets: [
                     {
+                        label: 'Predicted new cases from',
+                        borderColor: 'rgba(0, 255, 0, 0.2)',
+                        backgroundColor: 'rgba(0, 255, 0, 0.2)',
+                        data: [@foreach (var day in chartData){ @(day.PredictedNewCasesFrom + ", ")} ],
+                        fill: true,
+                    },
+                    {
                         label: 'New cases',
-                        borderColor: 'rgba(0, 0, 0, 1)',
+                        borderColor: 'rgba(0, 0, 0, 0.75)',
+                        backgroundColor: 'rgba(0, 0, 0, 0.75)',
                         data: [@foreach (var day in chartData){
                                    if (day.NewCases != null)
                                    {
@@ -122,6 +131,13 @@
                                    }
                                } ],
                         fill: false,
+                    },
+                    {
+                        label: 'Predicted new cases to',
+                        borderColor: 'rgba(255, 0, 0, 0.2)',
+                        backgroundColor: 'rgba(255, 0, 0, 0.2)',
+                        data: [@foreach (var day in chartData){ @(day.PredictedNewCasesTo + ", ")} ],
+                        fill: true,
                     },
                     ]
             },
