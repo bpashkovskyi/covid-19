@@ -1,0 +1,37 @@
+﻿@{
+    ViewData["Title"] = "Covid-19";
+}
+@model Covid19.DomainModels.PredictedTimeSeries
+
+<partial name="_Header" for="@Model" />
+
+<div class="text-center">
+    <table>
+        <tr>
+            <th rowspan="2">Date</th>
+            <th rowspan="2">Day number</th>
+        </tr>
+        <tr>
+            <th>Predicted total cases<br /></th>
+            <th>Total cases</th>
+            <th>Predicted new cases</th>
+            <th>New cases</th>
+            <th>Increase Rate</th>
+            <th>Predicted Increase Rate</th>
+
+        </tr>
+        @foreach (var day in Model.DaysData)
+        {
+    <tr>
+        <td>@day.DateString</td>
+        <td>@day.DayNumber</td>
+        <td>@day.PredictedTotalCases.ToString("#,##0")</td>
+        <td>@day.TotalCases?.ToString("#,##0")</td>
+        <td>@day.PredictedNewCases.ToString("#,##0")</td>
+        <td>@day.NewCases?.ToString("#,##0")</td>
+        <td>@day.IncreaseRate?.ToString("0.00000")</td>
+        <td>@day.PredictedIncreaseRate?.ToString("0.00000")</td>
+    </tr>
+        }
+    </table>
+</div>

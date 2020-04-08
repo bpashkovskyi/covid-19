@@ -1,0 +1,29 @@
+﻿@using Covid19.ApplicationModels
+
+@model Covid19.DomainModels.PredictedTimeSeries
+
+<h1 class="display-4">COVID-19</h1>
+<h3>Today is @DateTime.Now.ToLongDateString().</h3>
+Regression error: @Model.RegressionCoefficients.RegressionError
+
+<div>
+    @Html.ActionLink("Confirmed table", "Index", "Home", new { useLastDays = Model.UseLastDays, timeSeriesType = TimeSeriesType.Confirmed, viewType = "table", countries = Model.Countries, countrySearchType = Model.CountrySearchType, useAverage = Model.UseAverage })
+    @Html.ActionLink("Confirmed graph", "Index", "Home", new { useLastDays = Model.UseLastDays, timeSeriesType = TimeSeriesType.Confirmed, viewType = "graph", countries = Model.Countries, countrySearchType = Model.CountrySearchType, useAverage = Model.UseAverage })
+    @Html.ActionLink("Death table", "Index", "Home", new { useLastDays = Model.UseLastDays, timeSeriesType = TimeSeriesType.Death, viewType = "table", countries = Model.Countries, countrySearchType = Model.CountrySearchType, useAverage = Model.UseAverage })
+    @Html.ActionLink("Death graph", "Index", "Home", new { useLastDays = Model.UseLastDays, timeSeriesType = TimeSeriesType.Death, viewType = "graph", countries = Model.Countries, countrySearchType = Model.CountrySearchType, useAverage = Model.UseAverage })
+</div>
+<div>
+    <form method="get">
+        <input type="hidden" name="viewType" value="@Model.ViewType" />
+        <input type="hidden" name="timeSeriesType" value="@Model.TimeSeriesType" />
+        <label>Use last days:</label>
+        <input type="text" name="useLastDays" value="@Model.UseLastDays" /><br />
+        <label>Countries by comma:</label>
+        <input type="text" name="countries" value="@Model.Countries" /><br />
+        <label>Countries search type (inside or outside):</label>
+        <input type="text" name="countrySearchType" value="@Model.CountrySearchType" /><br />
+        <label>Use average:</label>
+        @Html.CheckBox("useAverage", Model.UseAverage)<br />
+        <input type="submit" value="Predict" />
+    </form>
+</div>

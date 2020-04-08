@@ -1,4 +1,4 @@
-﻿namespace Covid19.Models
+﻿namespace Covid19.DomainModels
 {
     public class ExponentialRegressionCoefficients
     {
