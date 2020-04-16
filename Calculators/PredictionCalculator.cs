@@ -112,6 +112,8 @@ namespace Covid19.Calculators
                 predictionDaysData.Add(newPredictedDay);
             }
 
+            predictionDaysData.Remove(predictionDaysData.Last());
+
             return new PredictedTimeSeries
             {
                 DaysData = predictionDaysData,
