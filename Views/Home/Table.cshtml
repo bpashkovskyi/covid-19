@@ -1,37 +1,37 @@
 ﻿@{
     ViewData["Title"] = "Covid-19";
 }
-@model Covid19.DomainModels.PredictedTimeSeries
+@model Covid19.ApplicationModels.PredictionOutputModel
 
-<partial name="_Header" for="@Model" />
+<partial name="_Header" for="@Model.Settings" />
 
 <div class="text-center">
-    <table>
+    <table class="covid-data">
         <tr>
             <th rowspan="2">Date</th>
             <th rowspan="2">Day number</th>
         </tr>
         <tr>
-            <th>Predicted total cases<br /></th>
+            <th>Prediction total cases<br /></th>
             <th>Total cases</th>
-            <th>Predicted new cases</th>
+            <th>Prediction new cases</th>
             <th>New cases</th>
             <th>Increase Rate</th>
-            <th>Predicted Increase Rate</th>
+            <th>Prediction Increase Rate</th>
 
         </tr>
-        @foreach (var day in Model.DaysData)
+        @foreach (var day in Model.TimeSeries.DaysData)
         {
-    <tr>
-        <td>@day.DateString</td>
-        <td>@day.DayNumber</td>
-        <td>@day.PredictedTotalCases.ToString("#,##0")</td>
-        <td>@day.TotalCases?.ToString("#,##0")</td>
-        <td>@day.PredictedNewCases.ToString("#,##0")</td>
-        <td>@day.NewCases?.ToString("#,##0")</td>
-        <td>@day.IncreaseRate?.ToString("0.00000")</td>
-        <td>@day.PredictedIncreaseRate?.ToString("0.00000")</td>
-    </tr>
+            <tr>
+                <td>@day.Date.ToShortDateString()</td>
+                <td>@day.DayNumber</td>
+                <td>@day.PredictionTotalCases.ToString("#,##0")</td>
+                <td>@day.TotalCases?.ToString("#,##0")</td>
+                <td>@day.PredictionNewCases.ToString("#,##0")</td>
+                <td>@day.NewCases?.ToString("#,##0")</td>
+                <td>@day.IncreaseRate?.ToString("0.00000")</td>
+                <td>@day.PredictionIncreaseRate.ToString("0.00000")</td>
+            </tr>
         }
     </table>
 </div>

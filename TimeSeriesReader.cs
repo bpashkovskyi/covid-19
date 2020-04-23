@@ -1,13 +1,15 @@
-﻿namespace Covid19.Calculators
+﻿namespace Covid19
 {
+    using System;
     using System.Collections.Generic;
     using System.Data;
     using System.IO;
     using System.Net;
     using System.Text.RegularExpressions;
 
-    using ApplicationModels;
-    using DomainModels;
+    using Covid19.ApplicationModels;
+    using Covid19.Models.Entities;
+    using Covid19.Models.Enums;
 
     public class TimeSeriesReader
     {
@@ -17,12 +19,12 @@
 
         public TimeSeriesReadOutputModel ReadTimeSeries(TimeSeriesReadInputModel timeSeriesReadInputModel)
         {
-            var timeSeriesUrl = GetTimeSeriesUrl(timeSeriesReadInputModel.TimeSeriesType);
-            var streamReader = GetStreamReaderForRemoteUrl(timeSeriesUrl);
+            var timeSeriesUrl = this.GetTimeSeriesUrl(timeSeriesReadInputModel.TimeSeriesType);
+            var streamReader = this.GetStreamReaderForRemoteUrl(timeSeriesUrl);
 
-            var timeSeriesDataTable = ConvertCsvToDataTable(streamReader);
+            var timeSeriesDataTable = this.ConvertCsvToDataTable(streamReader);
 
-            var timeSeries = ReadTimeSeries(timeSeriesDataTable, timeSeriesReadInputModel.Countries, timeSeriesReadInputModel.CountrySearchType);
+            var timeSeries = this.ReadTimeSeries(timeSeriesDataTable, timeSeriesReadInputModel.Countries, timeSeriesReadInputModel.CountrySearchType);
 
             return new TimeSeriesReadOutputModel { TimeSeries = timeSeries };
         }
@@ -72,7 +74,7 @@
                 var dayData = new DayData
                 {
                     DayNumber = dayNumber,
-                    DateString = timeSeriesDataTable.Columns[columnIndex].ColumnName,
+                    Date = DateTime.Parse(timeSeriesDataTable.Columns[columnIndex].ColumnName),
                     TotalCases = 0,
                 };
 

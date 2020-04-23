@@ -1,29 +1,59 @@
 ﻿@using Covid19.ApplicationModels
+@using Covid19.Models.Enums
 
-@model Covid19.DomainModels.PredictedTimeSeries
+@model Covid19.ApplicationModels.PredictionSettings
 
-<h1 class="display-4">COVID-19</h1>
-<h3>Today is @DateTime.Now.ToLongDateString().</h3>
-Regression error: @Model.RegressionCoefficients.RegressionError
 
-<div>
-    @Html.ActionLink("Confirmed table", "Index", "Home", new { useLastDays = Model.UseLastDays, timeSeriesType = TimeSeriesType.Confirmed, viewType = "table", countries = Model.Countries, countrySearchType = Model.CountrySearchType, useAverage = Model.UseAverage })
-    @Html.ActionLink("Confirmed graph", "Index", "Home", new { useLastDays = Model.UseLastDays, timeSeriesType = TimeSeriesType.Confirmed, viewType = "graph", countries = Model.Countries, countrySearchType = Model.CountrySearchType, useAverage = Model.UseAverage })
-    @Html.ActionLink("Death table", "Index", "Home", new { useLastDays = Model.UseLastDays, timeSeriesType = TimeSeriesType.Death, viewType = "table", countries = Model.Countries, countrySearchType = Model.CountrySearchType, useAverage = Model.UseAverage })
-    @Html.ActionLink("Death graph", "Index", "Home", new { useLastDays = Model.UseLastDays, timeSeriesType = TimeSeriesType.Death, viewType = "graph", countries = Model.Countries, countrySearchType = Model.CountrySearchType, useAverage = Model.UseAverage })
-</div>
-<div>
+<nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+    <div class="container">
+        <span class="navbar-brand">Covid-19</span>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="navbar-collapse collapse d-sm-inline-flex flex-sm-row-reverse">
+            <ul class="navbar-nav flex-grow-1">
+                <li class="nav-item">
+                    <a class="nav-link text-dark" href="@Url.Action("Index", "Home", new { useLastDays = Model.UseLastDays, timeSeriesType = TimeSeriesType.Confirmed, viewType = "table", countries = Model.Countries, countrySearchType = Model.CountrySearchType})">Confirmed table</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-dark" href="@Url.Action("Index", "Home", new { useLastDays = Model.UseLastDays, timeSeriesType = TimeSeriesType.Confirmed, viewType = "graph", countries = Model.Countries, countrySearchType = Model.CountrySearchType})">Confirmed graph</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-dark" href="@Url.Action("Index", "Home", new { useLastDays = Model.UseLastDays, timeSeriesType = TimeSeriesType.Death, viewType = "table", countries = Model.Countries, countrySearchType = Model.CountrySearchType})">Death table</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-dark" href="@Url.Action("Index", "Home", new { useLastDays = Model.UseLastDays, timeSeriesType = TimeSeriesType.Death, viewType = "graph", countries = Model.Countries, countrySearchType = Model.CountrySearchType})">Death graph</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="header-form">
     <form method="get">
-        <input type="hidden" name="viewType" value="@Model.ViewType" />
-        <input type="hidden" name="timeSeriesType" value="@Model.TimeSeriesType" />
-        <label>Use last days:</label>
-        <input type="text" name="useLastDays" value="@Model.UseLastDays" /><br />
-        <label>Countries by comma:</label>
-        <input type="text" name="countries" value="@Model.Countries" /><br />
-        <label>Countries search type (inside or outside):</label>
-        <input type="text" name="countrySearchType" value="@Model.CountrySearchType" /><br />
-        <label>Use average:</label>
-        @Html.CheckBox("useAverage", Model.UseAverage)<br />
-        <input type="submit" value="Predict" />
+        <input type="hidden" asp-for="ViewType" name="viewType" />
+        <input type="hidden" asp-for="TimeSeriesType" name="timeSeriesType" />
+        <table class="header-form">
+            <tr>
+                <th><label>Use last days:</label></th>
+                <th><label>Countries by comma:</label></th>
+                <th><label>Countries search type:</label></th>
+                <th></th>
+            </tr>
+            <tr>
+                <th><input type="number" asp-for="UseLastDays" name="useLastDays" /></th>
+                <th>  <input type="text" asp-for="Countries" name="countries" /></th>
+                <th>
+                    <select asp-for="CountrySearchType" name="countrySearchType">
+                        <option value="Inside">Inside</option>
+                        <option value="Outside">Outside</option>
+                    </select>
+                </th>
+                <th><input type="submit" value="Predict" /></th>
+            </tr>
+        </table>
     </form>
 </div>
+
+

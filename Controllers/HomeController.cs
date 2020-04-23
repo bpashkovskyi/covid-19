@@ -4,31 +4,32 @@ using Microsoft.AspNetCore.Mvc;
 namespace Covid19.Controllers
 {
     using ApplicationModels;
-    using Calculators;
+
+    using Covid19.Models.Enums;
+    using Covid19.Services;
 
     public class HomeController : Controller
     {
-        private readonly PredictionCalculator _predictionCalculator;
+        private readonly PredictionService predictionService;
 
         public HomeController()
         {
-            _predictionCalculator = new PredictionCalculator();
+            this.predictionService = new PredictionService();
         }
 
-        public IActionResult Index(int useLastDays = 30, TimeSeriesType timeSeriesType = TimeSeriesType.Confirmed, string countries = "China,US", CountrySearchType countrySearchType = CountrySearchType.Outside, bool useAverage = false, string viewType = "table")
+        public IActionResult Index(int useLastDays = 30, TimeSeriesType timeSeriesType = TimeSeriesType.Confirmed, string countries = "China,US", CountrySearchType countrySearchType = CountrySearchType.Outside, string viewType = "table")
         {
-            var predictionModel = new PredictionInputModel
+            var predictionSettings = new PredictionSettings
             {
                 UseLastDays = useLastDays,
                 TimeSeriesType = timeSeriesType,
-                Countries = countries.Split(',').ToList(),
+                Countries = countries,
                 CountrySearchType = countrySearchType,
-                UseAverage = useAverage,
                 ViewType = viewType,
             };
-            var predictionTimeSeries = _predictionCalculator.CreatePredictionTimeSeries(predictionModel).TimeSeries;
+            var predictionOutput = this.predictionService.CreatePredictionTimeSeries(new PredictionInputModel { Settings = predictionSettings });
 
-            return viewType == "table" ? View("Table", predictionTimeSeries) : View("Graph", predictionTimeSeries);
+            return viewType == "table" ? View("Table", predictionOutput) : View("Graph", predictionOutput);
         }
     }
 }

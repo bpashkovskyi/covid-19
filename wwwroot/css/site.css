@@ -55,20 +55,38 @@ body {
   line-height: 60px; /* Vertically center the text there */
 }
 
-table {
+div.header-form {
+    margin: 10px;
+}
+
+table.header-form {
     border-collapse: collapse;
 }
 
-table, th, td {
+table.header-form th, td {
+    border: 0px;
+    padding: 3px;
+}
+
+    table.header-form input, select {
+        width: 150px;
+        height: 35px;
+    }
+
+table.covid-data {
+    border-collapse: collapse;
+}
+
+table.covid-data th, td {
     border: 1px solid black;
     padding: 3px;
 }
 
-tr:nth-child(even) {
+table.covid-data tr:nth-child(even) {
     background-color: #f2f2f2;
 }
 
-th {
+table.covid-data th {
     background-color: #4CAF50;
     color: white;
 }

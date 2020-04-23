@@ -1,4 +1,4 @@
-﻿namespace Covid19.DomainModels
+﻿namespace Covid19.Models.Entities
 {
     using System.Collections.Generic;
 

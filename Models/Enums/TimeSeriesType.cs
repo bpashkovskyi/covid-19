@@ -1,4 +1,4 @@
-﻿namespace Covid19.ApplicationModels
+﻿namespace Covid19.Models.Enums
 {
     public enum TimeSeriesType
     {

@@ -1,13 +1,13 @@
 ﻿namespace Covid19.ApplicationModels
 {
-    using System.Collections.Generic;
-
     using Covid19.Models.Enums;
 
-    public class TimeSeriesReadInputModel
+    public class PredictionSettings
     {
+        public int UseLastDays { get; set; }
         public TimeSeriesType TimeSeriesType { get; set; }
-        public List<string> Countries { get; set; }
+        public string Countries { get; set; }
         public CountrySearchType CountrySearchType { get; set; }
+        public string ViewType { get; set; }
     }
 }

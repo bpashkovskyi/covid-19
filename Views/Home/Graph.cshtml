@@ -1,9 +1,9 @@
 ﻿@{
     ViewData["Title"] = "Covid-19";
 }
-@model Covid19.DomainModels.PredictedTimeSeries
+@model Covid19.ApplicationModels.PredictionOutputModel
 
-<partial name="_Header" for="@Model" />
+<partial name="_Header" for="@Model.Settings" />
 
 <div class="text-center">
     <div style="width:90%;">
@@ -19,19 +19,19 @@
         var totalCases = {
             type: 'line',
             data: {
-                labels: [@foreach (var day in Model.DaysData){ @(day.DayNumber + ", ")} ],
+                labels: [@foreach (var day in Model.TimeSeries.DaysData){ @(day.DayNumber + ", ")} ],
                 datasets: [
                     {
-                        label: 'Predicted total cases',
+                        label: 'Prediction total cases',
                         borderColor: 'rgba(255, 0, 0, 0.2)',
                         backgroundColor: 'rgba(255, 0, 0, 0.2)',
-                        data: [@foreach (var day in Model.DaysData){ @(day.PredictedTotalCases + ", ")} ],
+                        data: [@foreach (var day in Model.TimeSeries.DaysData){ @(day.PredictionTotalCases + ", ")} ],
                         fill: true,
                     },
                     {
                         label: 'Total cases',
                         borderColor: 'rgba(0, 0, 0, 1)',
-                        data: [@foreach (var day in Model.DaysData){if (day.TotalCases != null){@(day.TotalCases.Value + ", ")}} ],
+                        data: [@foreach (var day in Model.TimeSeries.DaysData){if (day.TotalCases != null){@(day.TotalCases.Value + ", ")}} ],
                         fill: false,
                     }
                     ]
@@ -73,20 +73,20 @@
         var newCases = {
             type: 'bar',
             data: {
-                labels: [@foreach (var day in Model.DaysData){ @(day.DayNumber + ", ")} ],
+                labels: [@foreach (var day in Model.TimeSeries.DaysData){ @(day.DayNumber + ", ")} ],
                 datasets: [
                     {
-                        label: 'Predicted new cases',
+                        label: 'Prediction new cases',
                         borderColor: 'rgba(255, 0, 0, 0.2)',
                         backgroundColor: 'rgba(255, 0, 0, 0.2)',
-                        data: [@foreach (var day in Model.DaysData){ @(day.PredictedNewCases + ", ")} ],
+                        data: [@foreach (var day in Model.TimeSeries.DaysData){ @(day.PredictionNewCases + ", ")} ],
                         fill: true,
                     },
                     {
                         label: 'New cases',
                         borderColor: 'rgba(0, 0, 0, 0.75)',
                         backgroundColor: 'rgba(0, 0, 0, 0.75)',
-                        data: [@foreach (var day in Model.DaysData){
+                        data: [@foreach (var day in Model.TimeSeries.DaysData){
                                    if (day.NewCases != null)
                                    {
                                        @(day.NewCases.Value + ", ")
@@ -132,20 +132,20 @@
         var increaseRate = {
             type: 'line',
             data: {
-                labels: [@foreach (var day in Model.DaysData){ @(day.DayNumber + ", ")} ],
+                labels: [@foreach (var day in Model.TimeSeries.DaysData){ @(day.DayNumber + ", ")} ],
                 datasets: [
                     {
-                        label: 'Predicted increase rate',
+                        label: 'Prediction increase rate',
                         borderColor: 'rgba(255, 0, 0, 0.2)',
                         backgroundColor: 'rgba(255, 0, 0, 0.2)',
-                        data: [@foreach (var day in Model.DaysData){ @(day.PredictedIncreaseRate + ", ")} ],
+                        data: [@foreach (var day in Model.TimeSeries.DaysData){ @(day.PredictionIncreaseRate + ", ")} ],
                         fill: true,
                     },
                     {
                         label: 'Increase rate',
                         borderColor: 'rgba(0, 0, 0, 0.75)',
                         backgroundColor: 'rgba(0, 0, 0, 0.75)',
-                        data: [@foreach (var day in Model.DaysData){
+                        data: [@foreach (var day in Model.TimeSeries.DaysData){
                                    if (day.IncreaseRate != null)
                                    {
                                        @(day.IncreaseRate.Value + ", ")

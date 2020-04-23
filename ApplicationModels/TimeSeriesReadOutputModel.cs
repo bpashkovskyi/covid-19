@@ -1,6 +1,6 @@
 ﻿namespace Covid19.ApplicationModels
 {
-    using DomainModels;
+    using Covid19.Models.Entities;
 
     public class TimeSeriesReadOutputModel
     {
