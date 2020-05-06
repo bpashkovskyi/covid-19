@@ -11,7 +11,7 @@
     using Covid19.Models.Entities;
     using Covid19.Models.Enums;
 
-    public class TimeSeriesReader
+    public class TimeSeriesReadService
     {
         private const string ConfirmedCsvUrl = "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv";
         private const string DeathCsvUrl = "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv";
@@ -59,8 +59,10 @@
                 {
                     dataRow[i] = rows[i];
                 }
+
                 dataTable.Rows.Add(dataRow);
             }
+
             return dataTable;
         }
 
@@ -75,7 +77,7 @@
                 {
                     DayNumber = dayNumber,
                     Date = DateTime.Parse(timeSeriesDataTable.Columns[columnIndex].ColumnName),
-                    TotalCases = 0,
+                    TotalCases = 0
                 };
 
                 for (var rowIndex = 0; rowIndex < timeSeriesDataTable.Rows.Count; rowIndex++)
@@ -86,13 +88,14 @@
                     switch (countrySearchType)
                     {
                         case CountrySearchType.Inside when countries.Contains(currentCountryName):
-                        case CountrySearchType.Outside when !countries.Contains(currentCountryName):
+                        case CountrySearchType.Outside when string.IsNullOrEmpty(currentCountryName) || !countries.Contains(currentCountryName):
                             dayData.TotalCases += dailyCases;
                             break;
                     }
                 }
-                dayNumber++;
+
                 daysData.Add(dayData);
+                dayNumber++;
             }
 
             return new TimeSeries { DaysData = daysData };

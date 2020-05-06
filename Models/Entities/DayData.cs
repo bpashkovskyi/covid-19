@@ -9,7 +9,7 @@
 
         public long TotalCases { get; set; }
         public long NewCases { get; set; }
-        public double IncreaseRate { get; set; }
+        public long WeeklyNewCases { get; set; }
 
         public PredictionDayData ToPredictionDayData()
         {
@@ -19,10 +19,9 @@
                 Date = this.Date,
                 TotalCases = this.TotalCases,
                 NewCases = this.NewCases,
-                IncreaseRate = this.IncreaseRate,
+                WeeklyNewCases = this.WeeklyNewCases,
                 PredictionTotalCases = this.TotalCases,
                 PredictionNewCases = this.NewCases,
-                PredictionIncreaseRate = this.IncreaseRate,
             };
         }
     }

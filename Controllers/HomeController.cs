@@ -25,7 +25,7 @@ namespace Covid19.Controllers
                 TimeSeriesType = timeSeriesType,
                 Countries = countries,
                 CountrySearchType = countrySearchType,
-                ViewType = viewType,
+                ViewType = viewType
             };
             var predictionOutput = this.predictionService.CreatePredictionTimeSeries(new PredictionInputModel { Settings = predictionSettings });
 

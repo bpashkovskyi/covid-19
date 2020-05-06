@@ -12,8 +12,6 @@
 
         public long? NewCases { get; set; }
         public long PredictionNewCases { get; set; }
-
-        public double? IncreaseRate { get; set; }
-        public double PredictionIncreaseRate { get; set; }
+        public long? WeeklyNewCases { get; set; }
     }
 }

@@ -3,38 +3,50 @@
 }
 @model Covid19.ApplicationModels.PredictionOutputModel
 
-<partial name="_Header" for="@Model.Settings" />
+<partial name="_Header" for="@Model.Settings"/>
 
 <div class="text-center">
-    <div style="width:90%;">
+    <div style="width: 90%;">
         <canvas id="canvas_total_cases"></canvas>
     </div>
-    <div style="width:90%;">
+    <div style="width: 90%;">
         <canvas id="canvas_new_cases"></canvas>
     </div>
-    <div style="width:90%;">
-        <canvas id="canvas_increase_rate"></canvas>
+    <div style="width: 90%;">
+        <canvas id="canvas_week_new_cases"></canvas>
     </div>
     <script>
         var totalCases = {
             type: 'line',
             data: {
-                labels: [@foreach (var day in Model.TimeSeries.DaysData){ @(day.DayNumber + ", ")} ],
+                labels: [@foreach (var day in Model.TimeSeries.DaysData)
+                         {
+                             <text>'</text>@(day.Date.ToShortDateString())<text>',</text>
+                         } ],
                 datasets: [
                     {
                         label: 'Prediction total cases',
                         borderColor: 'rgba(255, 0, 0, 0.2)',
                         backgroundColor: 'rgba(255, 0, 0, 0.2)',
-                        data: [@foreach (var day in Model.TimeSeries.DaysData){ @(day.PredictionTotalCases + ", ")} ],
+                        data: [@foreach (var day in Model.TimeSeries.DaysData)
+                               {
+                                   @(day.PredictionTotalCases + ", ")
+                               } ],
                         fill: true,
                     },
                     {
                         label: 'Total cases',
                         borderColor: 'rgba(0, 0, 0, 1)',
-                        data: [@foreach (var day in Model.TimeSeries.DaysData){if (day.TotalCases != null){@(day.TotalCases.Value + ", ")}} ],
+                        data: [@foreach (var day in Model.TimeSeries.DaysData)
+                               {
+                                   if (day.TotalCases != null)
+                                   {
+                                       @(day.TotalCases.Value + ", ")
+                                   }
+                               } ],
                         fill: false,
                     }
-                    ]
+                ]
             },
             options: {
                 responsive: true,
@@ -51,21 +63,29 @@
                     intersect: true
                 },
                 scales: {
-                    xAxes: [{
-                        display: true,
-                        scaleLabel: {
+                    xAxes: [
+                        {
                             display: true,
-                            labelString: 'Day'
+                            scaleLabel: {
+                                display: true,
+                                labelString: 'Day'
+                            }
                         }
-                    }],
-                    yAxes: [{
-                        display: true,
-                        //type: 'logarithmic',
-                        scaleLabel: {
+                    ],
+                    yAxes: [
+                        {
                             display: true,
-                            labelString: 'Total cases'
+                            //type: 'logarithmic',
+                            scaleLabel: {
+                                display: true,
+                                labelString: 'Total cases'
+                            },
+                            ticks:
+                            {
+                                min: 0
+                            },
                         }
-                    }]
+                    ]
                 }
             }
         };
@@ -73,20 +93,27 @@
         var newCases = {
             type: 'bar',
             data: {
-                labels: [@foreach (var day in Model.TimeSeries.DaysData){ @(day.DayNumber + ", ")} ],
+                labels: [@foreach (var day in Model.TimeSeries.DaysData)
+                         {
+                             <text>'</text>@(day.Date.ToShortDateString())<text>',</text>
+                         } ],
                 datasets: [
                     {
                         label: 'Prediction new cases',
                         borderColor: 'rgba(255, 0, 0, 0.2)',
                         backgroundColor: 'rgba(255, 0, 0, 0.2)',
-                        data: [@foreach (var day in Model.TimeSeries.DaysData){ @(day.PredictionNewCases + ", ")} ],
+                        data: [@foreach (var day in Model.TimeSeries.DaysData)
+                               {
+                                   @(day.PredictionNewCases + ", ")
+                               } ],
                         fill: true,
                     },
                     {
                         label: 'New cases',
                         borderColor: 'rgba(0, 0, 0, 0.75)',
                         backgroundColor: 'rgba(0, 0, 0, 0.75)',
-                        data: [@foreach (var day in Model.TimeSeries.DaysData){
+                        data: [@foreach (var day in Model.TimeSeries.DaysData)
+                               {
                                    if (day.NewCases != null)
                                    {
                                        @(day.NewCases.Value + ", ")
@@ -94,7 +121,7 @@
                                } ],
                         fill: false,
                     }
-                    ]
+                ]
             },
             options: {
                 responsive: true,
@@ -111,55 +138,60 @@
                     intersect: true
                 },
                 scales: {
-                    xAxes: [{
-                        display: true,
-                        scaleLabel: {
+                    xAxes: [
+                        {
                             display: true,
-                            labelString: 'Day'
+                            scaleLabel: {
+                                display: true,
+                                labelString: 'Day'
+                            }
                         }
-                    }],
-                    yAxes: [{
-                        display: true,
-                        scaleLabel: {
+                    ],
+                    yAxes: [
+                        {
                             display: true,
-                            labelString: 'New cases'
+                            scaleLabel: {
+                                display: true,
+                                labelString: 'New cases'
+                            },
+                            ticks:
+                            {
+                                min: 0
+                            },
                         }
-                    }]
+                    ]
                 }
             }
         };
 
-        var increaseRate = {
-            type: 'line',
+        var weekNewCases = {
+            type: 'bar',
             data: {
-                labels: [@foreach (var day in Model.TimeSeries.DaysData){ @(day.DayNumber + ", ")} ],
+                labels: [@foreach (var day in Model.TimeSeries.DaysData.Where(day => day.WeeklyNewCases > 0))
+                         {
+                             <text>'</text>@(day.Date.ToShortDateString())<text>',</text>
+                         } ],
                 datasets: [
                     {
-                        label: 'Prediction increase rate',
-                        borderColor: 'rgba(255, 0, 0, 0.2)',
-                        backgroundColor: 'rgba(255, 0, 0, 0.2)',
-                        data: [@foreach (var day in Model.TimeSeries.DaysData){ @(day.PredictionIncreaseRate + ", ")} ],
-                        fill: true,
-                    },
-                    {
-                        label: 'Increase rate',
+                        label: 'Weekly new cases',
                         borderColor: 'rgba(0, 0, 0, 0.75)',
                         backgroundColor: 'rgba(0, 0, 0, 0.75)',
-                        data: [@foreach (var day in Model.TimeSeries.DaysData){
-                                   if (day.IncreaseRate != null)
+                        data: [@foreach (var day in Model.TimeSeries.DaysData.Where(day => day.WeeklyNewCases > 0))
+                               {
+                                   if (day.NewCases != null)
                                    {
-                                       @(day.IncreaseRate.Value + ", ")
+                                       @(day.WeeklyNewCases.Value + ", ")
                                    }
                                } ],
                         fill: false,
                     }
-                    ]
+                ]
             },
             options: {
                 responsive: true,
                 title: {
                     display: true,
-                    text: 'COVID-19 increase rate'
+                    text: 'COVID-19 new cases'
                 },
                 tooltips: {
                     mode: 'index',
@@ -170,33 +202,41 @@
                     intersect: true
                 },
                 scales: {
-                    xAxes: [{
-                        display: true,
-                        scaleLabel: {
+                    xAxes: [
+                        {
                             display: true,
-                            labelString: 'Day'
+                            scaleLabel: {
+                                display: true,
+                                labelString: 'Day'
+                            }
                         }
-                    }],
-                    yAxes: [{
-                        display: true,
-                        scaleLabel: {
+                    ],
+                    yAxes: [
+                        {
                             display: true,
-                            labelString: 'Increase rate'
+                            scaleLabel: {
+                                display: true,
+                                labelString: 'Weekly New cases'
+                            },
+                            ticks:
+                            {
+                                min: 0
+                            },
                         }
-                    }]
+                    ]
                 }
             }
         };
 
-        window.onload = function () {
+        window.onload = function() {
             var ctx = document.getElementById('canvas_total_cases').getContext('2d');
             window.myLine = new Chart(ctx, totalCases);
 
             var ctx2 = document.getElementById('canvas_new_cases').getContext('2d');
             window.myLine2 = new Chart(ctx2, newCases);
 
-            var ctx3 = document.getElementById('canvas_increase_rate').getContext('2d');
-            window.myLine2 = new Chart(ctx3, increaseRate);
+            var ctx3 = document.getElementById('canvas_week_new_cases').getContext('2d');
+            window.myLine3 = new Chart(ctx3, weekNewCases);
         };
     </script>
 </div>
