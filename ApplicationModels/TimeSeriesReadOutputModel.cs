@@ -4,6 +4,6 @@
 
     public class TimeSeriesReadOutputModel
     {
-        public TimeSeries TimeSeries { get; set; }
+        public TimeSeriesByDay TimeSeriesByDay { get; set; }
     }
 }

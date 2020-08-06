@@ -4,6 +4,6 @@
 
     public class PredictionTimeSeries
     {
-        public List<PredictionDayData> DaysData { get; set; }
+        public List<PredictionDayData> DaysData { get; set; } = new List<PredictionDayData>();
     }
 }

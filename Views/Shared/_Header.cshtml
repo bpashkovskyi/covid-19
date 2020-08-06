@@ -1,8 +1,6 @@
-﻿@using Covid19.ApplicationModels
-@using Covid19.Models.Enums
+﻿@using Covid19.Models.Enums
 
 @model Covid19.ApplicationModels.PredictionSettings
-
 
 <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
     <div class="container">
@@ -13,18 +11,30 @@
         </button>
         <div class="navbar-collapse collapse d-sm-inline-flex flex-sm-row-reverse">
             <ul class="navbar-nav flex-grow-1">
+                @*<li class="nav-item">
+            <a class="nav-link text-dark" href="@Url.Action("Index", "Home", new { timeSeriesType = TimeSeriesType.Confirmed, viewType = "table", countries = Model.Countries, countrySearchType = Model.CountrySearchType})">Confirmed table</a>
+        </li>*@
                 <li class="nav-item">
-                    <a class="nav-link text-dark" href="@Url.Action("Index", "Home", new { useLastDays = Model.UseLastDays, timeSeriesType = TimeSeriesType.Confirmed, viewType = "table", countries = Model.Countries, countrySearchType = Model.CountrySearchType})">Confirmed table</a>
+                    <a class="nav-link text-dark" href="@Url.Action("Index", "Home", new { timeSeriesType = TimeSeriesType.Confirmed, viewType = "graph", countries = "Western Sahara", countrySearchType = CountrySearchType.Outside})">Confirmed graph world</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link text-dark" href="@Url.Action("Index", "Home", new { useLastDays = Model.UseLastDays, timeSeriesType = TimeSeriesType.Confirmed, viewType = "graph", countries = Model.Countries, countrySearchType = Model.CountrySearchType})">Confirmed graph</a>
+                    <a class="nav-link text-dark" href="@Url.Action("Index", "Home", new { timeSeriesType = TimeSeriesType.Confirmed, viewType = "graph", countries = "Ukraine", countrySearchType = CountrySearchType.Inside})">Confirmed graph Ukraine</a>
+                </li>
+                @*<li class="nav-item">
+            <a class="nav-link text-dark" href="@Url.Action("Index", "Home", new { timeSeriesType = TimeSeriesType.Death, viewType = "table", countries = Model.Countries, countrySearchType = Model.CountrySearchType})">Death table</a>
+        </li>*@
+                <li class="nav-item">
+                    <a class="nav-link text-dark" href="@Url.Action("Index", "Home", new { timeSeriesType = TimeSeriesType.Death, viewType = "graph", countries = "Western Sahara", countrySearchType = CountrySearchType.Outside})">Death graph world</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link text-dark" href="@Url.Action("Index", "Home", new { useLastDays = Model.UseLastDays, timeSeriesType = TimeSeriesType.Death, viewType = "table", countries = Model.Countries, countrySearchType = Model.CountrySearchType})">Death table</a>
+                    <a class="nav-link text-dark" href="@Url.Action("Index", "Home", new { timeSeriesType = TimeSeriesType.Death, viewType = "graph", countries = "Ukraine", countrySearchType = CountrySearchType.Inside})">Death graph Ukraine</a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link text-dark" href="@Url.Action("Index", "Home", new { useLastDays = Model.UseLastDays, timeSeriesType = TimeSeriesType.Death, viewType = "graph", countries = Model.Countries, countrySearchType = Model.CountrySearchType})">Death graph</a>
-                </li>
+                @*<li class="nav-item">
+            <a class="nav-link text-dark" href="@Url.Action("Index", "Home", new { timeSeriesType = TimeSeriesType.Recovered, viewType = "table", countries = Model.Countries, countrySearchType = Model.CountrySearchType})">Recovered table</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link text-dark" href="@Url.Action("Index", "Home", new { timeSeriesType = TimeSeriesType.Recovered, viewType = "graph", countries = Model.Countries, countrySearchType = Model.CountrySearchType})">Recovered graph</a>
+        </li>*@
             </ul>
         </div>
     </div>
@@ -32,25 +42,31 @@
 
 <div class="header-form">
     <form method="get">
-        <input type="hidden" asp-for="ViewType" name="viewType" />
-        <input type="hidden" asp-for="TimeSeriesType" name="timeSeriesType" />
+        <input type="hidden" asp-for="ViewType" name="viewType"/>
+        <input type="hidden" asp-for="TimeSeriesType" name="timeSeriesType"/>
         <table class="header-form">
             <tr>
-                <th><label>Use last days:</label></th>
-                <th><label>Countries by comma:</label></th>
-                <th><label>Countries search type:</label></th>
+                <th>
+                    <label>Countries by comma:</label>
+                </th>
+                <th>
+                    <label>Countries search type:</label>
+                </th>
                 <th></th>
             </tr>
             <tr>
-                <th><input type="number" asp-for="UseLastDays" name="useLastDays" /></th>
-                <th>  <input type="text" asp-for="Countries" name="countries" /></th>
+                <th>
+                    <input type="text" asp-for="Countries" name="countries"/>
+                </th>
                 <th>
                     <select asp-for="CountrySearchType" name="countrySearchType">
                         <option value="Inside">Inside</option>
                         <option value="Outside">Outside</option>
                     </select>
                 </th>
-                <th><input type="submit" value="Predict" /></th>
+                <th>
+                    <input type="submit" value="Predict"/>
+                </th>
             </tr>
         </table>
     </form>

@@ -1,12 +1,10 @@
-﻿using System.Linq;
-using Microsoft.AspNetCore.Mvc;
-
-namespace Covid19.Controllers
+﻿namespace Covid19.Controllers
 {
-    using ApplicationModels;
-
+    using Covid19.ApplicationModels;
     using Covid19.Models.Enums;
     using Covid19.Services;
+
+    using Microsoft.AspNetCore.Mvc;
 
     public class HomeController : Controller
     {
@@ -17,19 +15,19 @@ namespace Covid19.Controllers
             this.predictionService = new PredictionService();
         }
 
-        public IActionResult Index(int useLastDays = 30, TimeSeriesType timeSeriesType = TimeSeriesType.Confirmed, string countries = "China,US", CountrySearchType countrySearchType = CountrySearchType.Outside, string viewType = "table")
+        public IActionResult Index(TimeSeriesType timeSeriesType = TimeSeriesType.Confirmed, string countries = "Ukraine", CountrySearchType countrySearchType = CountrySearchType.Inside, string viewType = "graph")
         {
             var predictionSettings = new PredictionSettings
             {
-                UseLastDays = useLastDays,
                 TimeSeriesType = timeSeriesType,
                 Countries = countries,
                 CountrySearchType = countrySearchType,
                 ViewType = viewType
             };
+
             var predictionOutput = this.predictionService.CreatePredictionTimeSeries(new PredictionInputModel { Settings = predictionSettings });
 
-            return viewType == "table" ? View("Table", predictionOutput) : View("Graph", predictionOutput);
+            return viewType == "table" ? this.View("Table", predictionOutput) : this.View("Graph", predictionOutput);
         }
     }
 }

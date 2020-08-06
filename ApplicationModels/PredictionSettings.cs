@@ -4,7 +4,6 @@
 
     public class PredictionSettings
     {
-        public int UseLastDays { get; set; }
         public TimeSeriesType TimeSeriesType { get; set; }
         public string Countries { get; set; }
         public CountrySearchType CountrySearchType { get; set; }

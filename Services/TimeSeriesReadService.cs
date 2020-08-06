@@ -1,4 +1,4 @@
-﻿namespace Covid19
+﻿namespace Covid19.Services
 {
     using System;
     using System.Collections.Generic;
@@ -10,6 +10,7 @@
     using Covid19.ApplicationModels;
     using Covid19.Models.Entities;
     using Covid19.Models.Enums;
+    using Covid19.Utilities;
 
     public class TimeSeriesReadService
     {
@@ -17,16 +18,17 @@
         private const string DeathCsvUrl = "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv";
         private const string RecoveredCsvUrl = "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_recovered_global.csv";
 
+        private readonly CountryToContinentConverter countryToContinentConverter = new CountryToContinentConverter();
+
         public TimeSeriesReadOutputModel ReadTimeSeries(TimeSeriesReadInputModel timeSeriesReadInputModel)
         {
             var timeSeriesUrl = this.GetTimeSeriesUrl(timeSeriesReadInputModel.TimeSeriesType);
             var streamReader = this.GetStreamReaderForRemoteUrl(timeSeriesUrl);
 
             var timeSeriesDataTable = this.ConvertCsvToDataTable(streamReader);
+            var timeSeries = this.ReadTimeSeries(timeSeriesDataTable);
 
-            var timeSeries = this.ReadTimeSeries(timeSeriesDataTable, timeSeriesReadInputModel.Countries, timeSeriesReadInputModel.CountrySearchType);
-
-            return new TimeSeriesReadOutputModel { TimeSeries = timeSeries };
+            return new TimeSeriesReadOutputModel { TimeSeriesByDay = timeSeries };
         }
 
         private StreamReader GetStreamReaderForRemoteUrl(string url)
@@ -66,39 +68,39 @@
             return dataTable;
         }
 
-        private TimeSeries ReadTimeSeries(DataTable timeSeriesDataTable, List<string> countries, CountrySearchType countrySearchType)
+        private TimeSeriesByDay ReadTimeSeries(DataTable timeSeriesDataTable)
         {
             var dayNumber = 1;
-            var daysData = new List<DayData>();
+            var daysData = new List<DayWithLocationsData>();
 
             for (var columnIndex = 4; columnIndex < timeSeriesDataTable.Columns.Count; columnIndex++)
             {
-                var dayData = new DayData
+                var dayData = new DayWithLocationsData
                 {
                     DayNumber = dayNumber,
-                    Date = DateTime.Parse(timeSeriesDataTable.Columns[columnIndex].ColumnName),
-                    TotalCases = 0
+                    Date = DateTime.Parse(timeSeriesDataTable.Columns[columnIndex].ColumnName)
                 };
 
                 for (var rowIndex = 0; rowIndex < timeSeriesDataTable.Rows.Count; rowIndex++)
                 {
                     var currentCountryName = timeSeriesDataTable.Rows[rowIndex][1].ToString();
-                    var dailyCases = int.Parse(timeSeriesDataTable.Rows[rowIndex][columnIndex].ToString());
+                    var totalCases = int.Parse(timeSeriesDataTable.Rows[rowIndex][columnIndex].ToString());
 
-                    switch (countrySearchType)
+                    var locationData = new LocationData
                     {
-                        case CountrySearchType.Inside when countries.Contains(currentCountryName):
-                        case CountrySearchType.Outside when string.IsNullOrEmpty(currentCountryName) || !countries.Contains(currentCountryName):
-                            dayData.TotalCases += dailyCases;
-                            break;
-                    }
+                        Country = currentCountryName,
+                        Continent = this.countryToContinentConverter.GetContinentByCountry(currentCountryName),
+                        TotalCases = totalCases
+                    };
+
+                    dayData.LocationsData.Add(locationData);
                 }
 
                 daysData.Add(dayData);
                 dayNumber++;
             }
 
-            return new TimeSeries { DaysData = daysData };
+            return new TimeSeriesByDay { DaysWithLocationData = daysData };
         }
 
         private string GetTimeSeriesUrl(TimeSeriesType timeSeriesType)

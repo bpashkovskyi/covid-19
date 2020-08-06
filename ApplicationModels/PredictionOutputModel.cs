@@ -4,7 +4,15 @@
 
     public class PredictionOutputModel
     {
-        public PredictionTimeSeries TimeSeries { get; set; }
+        public PredictionTimeSeries AggregatedTimeSeries { get; set; }
+
+        public TimeSeriesByLocation ContinentTimeSeries { get; set; }
+
+        public TimeSeriesByLocation GrowingCountriesTimeSeries { get; set; }
+
+        public TimeSeriesByLocation DecreasingCountriesTimeSeries { get; set; }
+
+        public TimeSeriesByLocation SelectedCountriesTimeSeries { get; set; }
 
         public PredictionSettings Settings { get; set; }
     }

@@ -6,6 +6,8 @@
 
     using Covid19.ApplicationModels;
     using Covid19.Models.Entities;
+    using Covid19.Models.Enums;
+    using Covid19.Utilities;
 
     using MathNet.Numerics;
 
@@ -20,49 +22,62 @@
 
         public PredictionOutputModel CreatePredictionTimeSeries(PredictionInputModel predictionInputModel)
         {
-            var readTimeSeriesInputModel = new TimeSeriesReadInputModel
-            {
-                Countries = predictionInputModel.Settings.Countries.Split(',').ToList(),
-                CountrySearchType = predictionInputModel.Settings.CountrySearchType,
-                TimeSeriesType = predictionInputModel.Settings.TimeSeriesType
-            };
+            var casesTimeSeries = this.timeSeriesReadService.ReadTimeSeries(new TimeSeriesReadInputModel { TimeSeriesType = TimeSeriesType.Confirmed }).TimeSeriesByDay;
+            var deathTimeSeries = this.timeSeriesReadService.ReadTimeSeries(new TimeSeriesReadInputModel { TimeSeriesType = TimeSeriesType.Death }).TimeSeriesByDay;
 
-            var timeSeries = this.timeSeriesReadService.ReadTimeSeries(readTimeSeriesInputModel).TimeSeries;
-            var filteredTimeSeries = this.FilterTimeSeries(timeSeries, predictionInputModel.Settings);
+            var readTimeSeries = predictionInputModel.Settings.TimeSeriesType == TimeSeriesType.Confirmed ? casesTimeSeries : deathTimeSeries;
 
-            this.AdjustRealDaysData(filteredTimeSeries);
-            var regressionFunction = this.CalculateRegressionFunction(filteredTimeSeries);
-            var predictionTimeSeries = this.CreatePredictionTimeSeries(filteredTimeSeries, regressionFunction);
+            var countryTimeSeriesByDay = this.GroupByCountries(readTimeSeries);
+            var continentTimeSeriesByDay = this.GroupByContinents(readTimeSeries);
+
+            var aggregatedTimeSeries = this.AggregateTimeSeries(countryTimeSeriesByDay, predictionInputModel.Settings);
+
+            var regressionFunction = this.CalculateRegressionFunction(aggregatedTimeSeries);
+            var predictionTimeSeries = this.CreatePredictionTimeSeries(aggregatedTimeSeries, regressionFunction);
+
+            var countryTimeSeriesByLocation = countryTimeSeriesByDay.ToTimeSeriesByLocation();
+
+            var selectedCounties = this.FilterSelectedCounties(countryTimeSeriesByLocation, predictionInputModel.Settings);
+            var growingCountriesTimeSeries = this.GetGrowingCountriesTimeSeries(countryTimeSeriesByLocation);
+            var decreasingCountriesTimeSeries = this.GetDecreasingCountriesTimeSeries(countryTimeSeriesByLocation);
 
             return new PredictionOutputModel
             {
-                TimeSeries = predictionTimeSeries,
-                Settings = predictionInputModel.Settings,
+                AggregatedTimeSeries = predictionTimeSeries,
+                ContinentTimeSeries = continentTimeSeriesByDay.ToTimeSeriesByLocation(),
+                GrowingCountriesTimeSeries = growingCountriesTimeSeries,
+                SelectedCountriesTimeSeries = selectedCounties,
+                DecreasingCountriesTimeSeries = decreasingCountriesTimeSeries,
+                Settings = predictionInputModel.Settings
             };
         }
 
-
-        private TimeSeries FilterTimeSeries(TimeSeries timeSeries, PredictionSettings predictionSettings)
+        private TimeSeriesByLocation FilterSelectedCounties(TimeSeriesByLocation countryTimeSeriesByLocation, PredictionSettings settings)
         {
-            return new TimeSeries { DaysData = timeSeries.DaysData.Skip(timeSeries.DaysData.Count - predictionSettings.UseLastDays).ToList() };
+            var locations = countryTimeSeriesByLocation.LocationsWithDayData.Where(location => settings.Countries.Contains(location.Country)).ToList();
+
+            return new TimeSeriesByLocation { LocationsWithDayData = locations };
         }
 
-        private void AdjustRealDaysData(TimeSeries timeSeries)
+        private TimeSeriesByLocation GetDecreasingCountriesTimeSeries(TimeSeriesByLocation countryTimeSeriesByLocation)
         {
-            foreach (var day in timeSeries.DaysData)
-            {
-                var previousDay = timeSeries.DaysData.GetPreviousElement(day, 1);
+            var locations = countryTimeSeriesByLocation.LocationsWithDayData.OrderBy(location => location.DayLocationData.Last().WeeklyNewCases - location.DayLocationData[location.DayLocationData.IndexOf(location.DayLocationData.Last()) - 30].WeeklyNewCases)
+                .Take(5).ToList();
 
-                day.NewCases = previousDay == null ? 0 : day.TotalCases - previousDay.TotalCases;
-
-                var previousWeekDay = timeSeries.DaysData.GetPreviousElement(day, 7);
-                day.WeeklyNewCases = previousWeekDay == null ? 0 : day.TotalCases - previousWeekDay.TotalCases;
-            }
+            return new TimeSeriesByLocation { LocationsWithDayData = locations };
         }
 
-        private Func<double, double> CalculateRegressionFunction(TimeSeries timeSeries)
+        private TimeSeriesByLocation GetGrowingCountriesTimeSeries(TimeSeriesByLocation countryTimeSeriesByLocation)
         {
-            var daysDataForPrediction = timeSeries.DaysData
+            var locations = countryTimeSeriesByLocation.LocationsWithDayData.OrderByDescending(location => location.DayLocationData.Last().WeeklyNewCases - location.DayLocationData[location.DayLocationData.IndexOf(location.DayLocationData.Last()) - 30].WeeklyNewCases)
+                .Take(5).ToList();
+
+            return new TimeSeriesByLocation { LocationsWithDayData = locations };
+        }
+
+        private Func<double, double> CalculateRegressionFunction(TimeSeriesByDay timeSeriesByDay)
+        {
+            var daysDataForPrediction = timeSeriesByDay.DaysWithLocationData
                 .Skip(1).ToArray();
 
             var xData = daysDataForPrediction.Select(dayData => (double)dayData.DayNumber).ToArray();
@@ -72,15 +87,114 @@
             return regressionFunction;
         }
 
-        private PredictionTimeSeries CreatePredictionTimeSeries(TimeSeries timeSeries, Func<double, double> regressionFunction)
+        private TimeSeriesByDay AggregateTimeSeries(TimeSeriesByDay countriesTimeSeriesByDay, PredictionSettings predictionSettings)
         {
-            var predictionDaysData = new List<PredictionDayData> { timeSeries.DaysData.First().ToPredictionDayData() };
+            var aggregatedTimeSeries = new TimeSeriesByDay();
 
-            while (predictionDaysData.Count < (timeSeries.DaysData.Count + 14))
+            foreach (var day in countriesTimeSeriesByDay.DaysWithLocationData)
+            {
+                var aggregatedTimeSeriesDay = new DayWithLocationsData
+                {
+                    DayNumber = day.DayNumber,
+                    Date = day.Date
+                };
+
+                foreach (var locationData in day.LocationsData)
+                {
+                    switch (predictionSettings.CountrySearchType)
+                    {
+                        case CountrySearchType.Inside when !string.IsNullOrEmpty(locationData.Country) && predictionSettings.Countries.Contains(locationData.Country):
+                        case CountrySearchType.Outside when string.IsNullOrEmpty(locationData.Country) || !predictionSettings.Countries.Contains(locationData.Country):
+                            aggregatedTimeSeriesDay.TotalCases += locationData.TotalCases;
+                            break;
+                    }
+                }
+
+                aggregatedTimeSeries.DaysWithLocationData.Add(aggregatedTimeSeriesDay);
+            }
+
+            this.AdjustRealDaysData(aggregatedTimeSeries);
+
+            return aggregatedTimeSeries;
+        }
+
+        private TimeSeriesByDay GroupByCountries(TimeSeriesByDay readTimeSeriesByDay)
+        {
+            var countryTimeSeries = new TimeSeriesByDay();
+
+            foreach (var countryDay in readTimeSeriesByDay.DaysWithLocationData)
+            {
+                var countriesData = countryDay.LocationsData.GroupBy(readData => readData.Country)
+                    .Select(
+                        countryData => new LocationData
+                        {
+                            Country = countryData.Key,
+                            TotalCases = countryData.Sum(readData => readData.TotalCases)
+                        }).ToList();
+
+                var continentDay = new DayWithLocationsData
+                {
+                    DayNumber = countryDay.DayNumber,
+                    Date = countryDay.Date,
+                    LocationsData = countriesData
+                };
+
+                countryTimeSeries.DaysWithLocationData.Add(continentDay);
+            }
+
+            this.AdjustRealDaysData(countryTimeSeries);
+
+            return countryTimeSeries;
+        }
+
+        private TimeSeriesByDay GroupByContinents(TimeSeriesByDay countiesTimeSeriesByDay)
+        {
+            var continentTimeSeries = new TimeSeriesByDay();
+
+            foreach (var countryDay in countiesTimeSeriesByDay.DaysWithLocationData)
+            {
+                var continentsData = countryDay.LocationsData.GroupBy(countryData => countryData.Continent).Select(
+                    continentData => new LocationData
+                    {
+                        Continent = continentData.Key,
+                        TotalCases = continentData.Sum(countryData => countryData.TotalCases)
+                    }).ToList();
+
+                var continentDay = new DayWithLocationsData
+                {
+                    DayNumber = countryDay.DayNumber,
+                    Date = countryDay.Date,
+                    LocationsData = continentsData.Where(continentData => !string.IsNullOrEmpty(continentData.Continent)).ToList()
+                };
+
+                continentTimeSeries.DaysWithLocationData.Add(continentDay);
+            }
+
+            this.AdjustRealDaysData(continentTimeSeries);
+
+            return continentTimeSeries;
+        }
+
+        private PredictionTimeSeries CreatePredictionTimeSeries(TimeSeriesByDay timeSeriesByDay, Func<double, double> regressionFunction)
+        {
+            var firstDay = timeSeriesByDay.DaysWithLocationData.First();
+
+            var predictionDaysData = new List<PredictionDayData>
+            {
+                new PredictionDayData
+                {
+                    DayNumber = firstDay.DayNumber,
+                    Date = firstDay.Date,
+                    TotalCases = firstDay.TotalCases,
+                    NewCases = firstDay.NewCases
+                }
+            };
+
+            while (predictionDaysData.Count < (timeSeriesByDay.DaysWithLocationData.Count + 192))
             {
                 var lastPredictionDay = predictionDaysData.Last();
 
-                var realDay = timeSeries.DaysData.FirstOrDefault(day => day.DayNumber == (lastPredictionDay.DayNumber + 1));
+                var realDay = timeSeriesByDay.DaysWithLocationData.FirstOrDefault(day => day.DayNumber == (lastPredictionDay.DayNumber + 1));
 
                 var newPredictionDay = new PredictionDayData
                 {
@@ -103,6 +217,25 @@
             {
                 DaysData = predictionDaysData.Where(day => day.PredictionNewCases > 0).ToList()
             };
+        }
+
+        private void AdjustRealDaysData(TimeSeriesByDay timeSeriesByDay)
+        {
+            foreach (var day in timeSeriesByDay.DaysWithLocationData)
+            {
+                var previousDay = timeSeriesByDay.DaysWithLocationData.GetPreviousElement(day, 1);
+
+                day.NewCases = previousDay == null ? 0 : day.TotalCases - previousDay.TotalCases;
+
+                var previousWeekDay = timeSeriesByDay.DaysWithLocationData.GetPreviousElement(day, 7);
+                day.WeeklyNewCases = previousWeekDay == null ? 0 : (day.TotalCases - previousWeekDay.TotalCases) / 7;
+
+                foreach (var locationData in day.LocationsData)
+                {
+                    locationData.NewCases = previousDay == null ? 0 : locationData.TotalCases - previousDay.LocationsData.Single(previousDayLocation => previousDayLocation.Equals(locationData)).TotalCases;
+                    locationData.WeeklyNewCases = previousWeekDay == null ? 0 : locationData.TotalCases - previousWeekDay.LocationsData.Single(previousWeekDayLocation => previousWeekDayLocation.Equals(locationData)).TotalCases;
+                }
+            }
         }
     }
 }

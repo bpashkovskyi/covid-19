@@ -3,7 +3,7 @@
 }
 @model Covid19.ApplicationModels.PredictionOutputModel
 
-<partial name="_Header" for="@Model.Settings" />
+<partial name="_Header" for="@Model.Settings"/>
 
 <div class="text-center">
     <table class="covid-data">
@@ -12,15 +12,12 @@
             <th rowspan="2">Day number</th>
         </tr>
         <tr>
-            <th>Prediction total cases<br /></th>
+            <th>Prediction total cases<br/></th>
             <th>Total cases</th>
             <th>Prediction new cases</th>
             <th>New cases</th>
-            <th>Increase Rate</th>
-            <th>Prediction Increase Rate</th>
-
         </tr>
-        @foreach (var day in Model.TimeSeries.DaysData)
+        @foreach (var day in Model.AggregatedTimeSeries.DaysData)
         {
             <tr>
                 <td>@day.Date.ToShortDateString()</td>
